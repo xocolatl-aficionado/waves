@@ -6,6 +6,7 @@ import os
 import subprocess
 from scipy.io import loadmat
 import streamlit as st
+import zipfile
 
 def shift_data(X, y, best_lag):
     if best_lag > 0:
@@ -24,16 +25,38 @@ def find_tests_folder(base_path):
             return os.path.join(root, "Tests")
     return None
 
-# Base path to the extracted data
-base_path = './'
+base_path = os.getcwd()
 
-# Check if the "swell_data" folder already exists
-if not os.path.exists('swell_data'):
-    st.write("Retreiving SWELL data from online......")
-    subprocess.run(["wget", "-O", "swell_data.zip", "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/n34wcksmts-2.zip"])
-    subprocess.run(["unzip", "swell_data.zip", "-d", base_path])
+# Define the folder and zip file names
+extracted_folder_name = 'SWELL An open-access experimental dataset for arrays of wave energy conversion systems'
+zip_file_name = 'swell_data.zip'
+zip_url = "https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/n34wcksmts-2.zip"
+
+# Check if the extracted folder already exists
+extracted_folder_path = os.path.join(base_path, extracted_folder_name)
+if not os.path.exists(extracted_folder_path):
+
+    # Check if the ZIP file exists
+    zip_file_path = os.path.join(base_path, zip_file_name)
+    if not os.path.exists(zip_file_path):
+        st.write("Retrieving SWELL data from online......")
+        try:
+            subprocess.run(["wget", "-O", zip_file_path, zip_url])
+        except:
+            st.error(f"Error downloading ZIP file: {e}")
+            exit(1)
+
+    # Extract the ZIP file using zipfile module
+    try:
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(extracted_folder_path)
+            st.write("Extraction completed successfully.")
+    except:
+        st.error(f"Error extracting ZIP file: {e}")
+        exit(1)
+
 else:
-  st.write("Great, SWELL data already present......")
+    st.write("Great, SWELL data already present......")
 
 tests_path = find_tests_folder(base_path)
 
